@@ -13,16 +13,16 @@ namespace NNPTPZ1.Mathematics
         public Polynomial Derive()
         {
             Polynomial p = new Polynomial();
-            for (int q = 1; q < Coefficient.Count; q++)
+            for (int i = 1; i < Coefficient.Count; i++)
             {
-                p.Coefficient.Add(Coefficient[q].Multiply(new Complex() { Re = q }));
+                p.Coefficient.Add(Coefficient[i].Multiply(new Complex() { Real = i }));
             }
             return p;
         }
 
         public Complex Eval(double x)
         {
-            return Eval(new Complex() { Re = x, Imaginary = 0 });
+            return Eval(new Complex() { Real = x, Imaginary = 0 });
         }
 
         public Complex Eval(Complex x)
