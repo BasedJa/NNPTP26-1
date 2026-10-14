@@ -24,21 +24,32 @@ namespace NNPTPZ1
             Console.WriteLine($"Polynomial: {polynomial}");
             Console.WriteLine($"Derivative: {derivedPolynomial}");
 
-            Color[] colors = new Color[]
+            Color[] colors = InitializeColors();
+
+            RenderFractal(bmp, width, height, xmin, ymin, xstep, ystep, polynomial, derivedPolynomial, knownRoots, colors);
+
+            return bmp;
+        }
+
+        private Color[] InitializeColors()
+        {
+            return new Color[]
             {
                 Color.Red, Color.Blue, Color.Green, Color.Yellow, Color.Orange, Color.Fuchsia, Color.Gold, Color.Cyan, Color.Magenta
             };
+        }
 
-            for (int i = 0; i < width; i++)
+        private void RenderFractal(Bitmap bmp, int width, int height, double xmin, double ymin, double xstep, double ystep,
+            Polynomial polynomial, Polynomial derivedPolynomial, List<Complex> knownRoots, Color[] colors)
+        {
+            for (int row = 0; row < height; row++)
             {
-                for (int j = 0; j < height; j++)
+                for (int column = 0; column < width; column++)
                 {
-                    Color pixelColor = CalculatePixelColor(i, j, xmin, ymin, xstep, ystep, polynomial, derivedPolynomial, knownRoots, colors);
-                    bmp.SetPixel(j, i, pixelColor);
+                    Color pixelColor = CalculatePixelColor(row, column, xmin, ymin, xstep, ystep, polynomial, derivedPolynomial, knownRoots, colors);
+                    bmp.SetPixel(column, row, pixelColor);
                 }
             }
-
-            return bmp;
         }
 
         private Polynomial CreatePolynomial()
@@ -54,15 +65,28 @@ namespace NNPTPZ1
         private Color CalculatePixelColor(int row, int column, double xmin, double ymin, double xstep, double ystep,
             Polynomial polynomial, Polynomial derivedPolynomial, List<Complex> knownRoots, Color[] colors)
         {
+            Complex currentValue = InitializeComplexNumber(row, column, xmin, ymin, xstep, ystep);
+
+            int iteration = RunNewtonIteration(ref currentValue, polynomial, derivedPolynomial);
+            int rootId = GetOrAddRoot(knownRoots, currentValue);
+
+            return MapToColor(iteration, rootId, colors);
+        }
+
+        private Complex InitializeComplexNumber(int row, int column, double xmin, double ymin, double xstep, double ystep)
+        {
             double y = ymin + row * ystep;
             double x = xmin + column * xstep;
 
-            Complex currentValue = new Complex()
+            return new Complex()
             {
                 Real = x == 0 ? 0.0001 : x,
                 Imaginary = y == 0 ? 0.0001 : y
             };
+        }
 
+        private int RunNewtonIteration(ref Complex currentValue, Polynomial polynomial, Polynomial derivedPolynomial)
+        {
             int iteration = 0;
             for (int i = 0; i < MaxIterations; i++)
             {
@@ -75,9 +99,11 @@ namespace NNPTPZ1
                 }
                 iteration++;
             }
+            return iteration;
+        }
 
-            int rootId = GetOrAddRoot(knownRoots, currentValue);
-
+        private Color MapToColor(int iteration, int rootId, Color[] colors)
+        {
             Color baseColor = colors[rootId % colors.Length];
             int r = Math.Min(Math.Max(0, baseColor.R - iteration * 2), 255);
             int g = Math.Min(Math.Max(0, baseColor.G - iteration * 2), 255);
@@ -88,11 +114,11 @@ namespace NNPTPZ1
 
         private int GetOrAddRoot(List<Complex> knownRoots, Complex currentValue)
         {
-            for (int w = 0; w < knownRoots.Count; w++)
+            for (int i = 0; i < knownRoots.Count; i++)
             {
-                if (Math.Pow(currentValue.Real - knownRoots[w].Real, 2) + Math.Pow(currentValue.Imaginary - knownRoots[w].Imaginary, 2) <= RootTolerance)
+                if (Math.Pow(currentValue.Real - knownRoots[i].Real, 2) + Math.Pow(currentValue.Imaginary - knownRoots[i].Imaginary, 2) <= RootTolerance)
                 {
-                    return w;
+                    return i;
                 }
             }
 
